@@ -1,0 +1,17 @@
+# Guide (local reference only)
+GUIDE.md
+
+# Dataset cache (auto-downloaded on first run)
+data/
+
+# Virtual environment
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
