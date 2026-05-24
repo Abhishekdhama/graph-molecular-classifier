@@ -27,15 +27,12 @@ MolTox-GCN is a graph-level binary classification model that takes molecular gra
 
 ```
 pyg-mini-project/
-├── README.md              # Project documentation
-├── GUIDE.md               # Exhaustive code guide — every concept & line explained
-├── mini_project/
-│   ├── model.py           # MoleculeGCN — GCN architecture (imported by train.py)
-│   └── train.py           # Entry point — data loading, training loop, evaluation
+├── mini_project            
+├── ├── model.py           # MoleculeGCN — GCN architecture (imported by train.py)
+│   └── train.py            # Entry point — data loading, training loop, evaluation
+    README.md           # Project documentation
 └── data/                  # Auto-generated on first run (MUTAG dataset cache)
 ```
-
-> **Note**: Only `train.py` needs to be run. It imports `model.py` automatically. See [GUIDE.md](GUIDE.md) for a detailed walkthrough of every piece of code.
 
 ## Prerequisites
 
