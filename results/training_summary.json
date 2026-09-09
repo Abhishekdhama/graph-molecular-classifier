@@ -1,0 +1,42 @@
+{
+  "42": {
+    "best_test_acc": 0.7105,
+    "best_epoch": 12
+  },
+  "0": {
+    "best_test_acc": 0.7368,
+    "best_epoch": 7
+  },
+  "1": {
+    "best_test_acc": 0.8421,
+    "best_epoch": 82
+  },
+  "7": {
+    "best_test_acc": 0.7632,
+    "best_epoch": 83
+  },
+  "13": {
+    "best_test_acc": 0.8421,
+    "best_epoch": 13
+  },
+  "21": {
+    "best_test_acc": 0.7632,
+    "best_epoch": 8
+  },
+  "99": {
+    "best_test_acc": 0.7632,
+    "best_epoch": 9
+  },
+  "123": {
+    "best_test_acc": 0.8947,
+    "best_epoch": 155
+  },
+  "256": {
+    "best_test_acc": 0.8947,
+    "best_epoch": 13
+  },
+  "512": {
+    "best_test_acc": 0.7368,
+    "best_epoch": 76
+  }
+}
