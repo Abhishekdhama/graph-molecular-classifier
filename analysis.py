@@ -204,12 +204,24 @@ def visualize_failure_case(dataset, gnn_exp, mol_id, seed1, seed2, jaccard_score
     diff1     = topk1 - topk2
     diff2     = topk2 - topk1
 
+    def fmt_nodes(node_set):
+        """Format node set as 'Node 3 (N), Node 7 (O)' instead of raw repr."""
+        if not node_set:
+            return "None"
+        atoms = {n: G.nodes[n]['atom'] for n in sorted(node_set)}
+        return ", ".join(f"{n} ({a})" for n, a in atoms.items())
+
+    shared_str = fmt_nodes(shared)
+    diff1_str  = fmt_nodes(diff1)
+    diff2_str  = fmt_nodes(diff2)
+    overlap    = f"Zero overlap" if not shared else f"Shared: {shared_str}"
+
     fig.suptitle(
         f"Failure Case — Molecule {mol_id}  |  True: {label_str}  |  "
         f"GNNExplainer Jaccard = {jaccard_score:.3f}\n"
-        f"⬤ Cyan circle = top-{TOP_K} nodes  |  "
-        f"Shared top-3: {shared}  |  "
-        f"Seed {seed1} only: {diff1}  |  Seed {seed2} only: {diff2}",
+        f"⬤ Cyan circle = top-{TOP_K} important nodes  |  "
+        f"{overlap}  |  "
+        f"Seed {seed1} only: {diff1_str}  |  Seed {seed2} only: {diff2_str}",
         fontsize=11, fontweight='bold', y=1.03
     )
 
