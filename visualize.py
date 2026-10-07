@@ -273,12 +273,10 @@ def main():
     misclassified = find_misclassified(dataset, device)
     print(f"  Misclassified by seed {SEED}: {misclassified}")
 
-    # Visualize all misclassified molecules
     for mol_id in misclassified:
         print(f"\n  → Visualizing molecule {mol_id}")
         visualize_molecule(mol_id, dataset, device)
 
-    # Also visualize probe molecules 0-4 for comparison
     print(f"\n  → Visualizing probe molecules 0-4")
     for mol_id in range(5):
         if mol_id not in misclassified:

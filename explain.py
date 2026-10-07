@@ -1,15 +1,3 @@
-"""
-explain.py — GNNExplainer for MoleculeGCN
-
-Yeh script trained model pe GNNExplainer chalata hai aur batata hai ki
-model ne kaunse atoms/bonds ko important samjha mutagenic prediction ke liye.
-
-What it does:
-  1. Model train karta hai
-  2. GNNExplainer run karta hai selected molecules pe
-  3. Har molecule ke liye dikhata hai ki kaunse atoms important hain
-"""
-
 import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import TUDataset
@@ -17,24 +5,18 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.explain import Explainer, GNNExplainer
 from model import MoleculeGCN
 
-# Atom types in MUTAG (one-hot index → element
-
 ATOM_NAMES = ['C', 'N', 'O', 'F', 'I', 'Cl', 'Br']
 
 
 def get_atom_name(one_hot_vector):
-    """One-hot feature vector se atom name nikalta hai."""
     idx = one_hot_vector.argmax().item()
     return ATOM_NAMES[idx] if idx < len(ATOM_NAMES) else f'?{idx}'
 
 
-# 1. Data loading
-
 print("=" * 60)
-print(" GNNExplainer — Molecular Toxicity Explanation")
+print(" GNNExplainer: Molecular Toxicity Explanation")
 print("=" * 60)
 
-print("\n📊 Step 1: Dataset load ho raha hai...")
 dataset = TUDataset(root='../data', name='MUTAG')
 torch.manual_seed(42)
 dataset = dataset.shuffle()
@@ -46,11 +28,6 @@ test_dataset = dataset[split:]
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 print(f"  {len(dataset)} molecules loaded (Train: {len(train_dataset)}, Test: {len(test_dataset)})")
-
-
-# 2. model train
-
-print("\n Step 2: Model train ho raha hai (100 epochs)...")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -92,8 +69,6 @@ def evaluate(loader):
     return correct / total
 
 
-# Train for 100 epochs
-
 for epoch in range(1, 101):
     loss = train_one_epoch()
     if epoch % 25 == 0:
@@ -104,61 +79,20 @@ train_acc = evaluate(train_loader)
 test_acc = evaluate(test_loader)
 print(f"\n  Training complete! Train Acc: {train_acc:.3f} │ Test Acc: {test_acc:.3f}")
 
-
-# 3.  GNNExplainer setup
-
-print("\n" + "=" * 60)
-print(" Step 3: GNNExplainer setup ho raha hai...")
-print("=" * 60)
-
-print("""
-    GNNExplainer kya karta hai?
-   ─────────────────────────────────────────────────
-   Yeh ek trained model ko "question" karta hai:
-   "Bhai, tune yeh prediction KYUN di?"
-
-   Kaise karta hai:
-   1. Har node (atom) ko ek "importance mask" deta hai (0 to 1)
-   2. Har edge (bond) ko bhi ek mask deta hai
-   3. Yeh masks LEARN karta hai — optimize karta hai taaki
-      sirf important atoms/bonds se bhi same prediction aaye
-   4. Jo atoms ka mask value HIGH hai → woh important hain
-
-   Socho aise:
-   Agar model bole "yeh molecule mutagenic hai" →
-   GNNExplainer batata hai "haan, KYUNKI yeh NO2 group hai"
-   ─────────────────────────────────────────────────
-""")
-
-# Model eval mode
 model.eval()
-
-# Explainer setup
-# 'phenomenon' = graph-level classification
-# algorithm = GNNExplainer (learns masks via optimization)
 
 explainer = Explainer(
     model=model,
     algorithm=GNNExplainer(epochs=200, lr=0.01),
-    explanation_type='phenomenon',       # "model ne yeh prediction kyun di"
-    node_mask_type='attributes',         
-    edge_mask_type='object',             
+    explanation_type='phenomenon',
+    node_mask_type='attributes',
+    edge_mask_type='object',
+    model_config=dict(
         mode='multiclass_classification',
-        task_level='graph',              # graph-level task hai
-        return_type='raw',               # model raw logits return karta hai
+        task_level='graph',
+        return_type='raw',
     ),
 )
-
-print("Explainer ready!\n")
-
-
-# 4. Molecules explaination
-
-print("=" * 60)
-print("  🧪 Step 4: Molecules explain ho rahe hain...")
-print("=" * 60)
-
-# Pick interesting molecules — some mutagenic, some non-mutagenic
 
 molecules_to_explain = []
 mutagenic_count = 0
@@ -182,8 +116,6 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
     true_label = data.y.item()
     label_text = "MUTAGENIC " if true_label == 1 else "NON-MUTAGENIC "
 
-    # check the model prediction
-
     with torch.no_grad():
         batch_vec = torch.zeros(data.num_nodes, dtype=torch.long, device=device)
         pred = model(data.x, data.edge_index, batch_vec)
@@ -199,10 +131,6 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
     correct = " CORRECT" if pred_class == true_label else "❌ WRONG"
     print(f"     Result:      {correct}")
 
-    # GNNExplainer:
-    # Single graph ke liye batch vector banana padta hai
-    # target = model ki prediction 
-
     explanation = explainer(
         data.x,
         data.edge_index,
@@ -210,32 +138,21 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
         batch=torch.zeros(data.num_nodes, dtype=torch.long, device=device),
     )
 
-    #Node importance nikalo ──
-    # node_mask shape: [num_nodes, num_features]
-    # Har node ka overall importance = uske mask values ka mean
-
     node_mask = explanation.node_mask
-    node_importance = node_mask.mean(dim=1)   # [num_nodes]
-
-    # Normalize to 0-1
+    node_importance = node_mask.mean(dim=1)
 
     if node_importance.max() > 0:
         node_importance = node_importance / node_importance.max()
 
-    # Edge importance nikalo ──
-
-    edge_mask = explanation.edge_mask   # [num_edges]
+    edge_mask = explanation.edge_mask
     if edge_mask is not None and edge_mask.max() > 0:
         edge_importance = edge_mask / edge_mask.max()
     else:
         edge_importance = edge_mask
 
-    # ── Results
     print(f"\n    Atom Importance (GNNExplainer results):")
     print(f"     {'Atom':>6} │ {'Element':>7} │ {'Importance':>10} │ {'Bar':>20}")
     print(f"     {'─'*6}─┼─{'─'*7}─┼─{'─'*10}─┼─{'─'*20}")
-
-    # Sort by importance (descending)
 
     sorted_indices = node_importance.argsort(descending=True)
 
@@ -245,15 +162,11 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
         atom_name = get_atom_name(data.x[node_idx])
         bar = "█" * int(imp * 15) + "░" * (15 - int(imp * 15))
 
-        #  highlight the Top-3 
-
         marker = " ⭐" if rank < 3 else ""
         print(f"     {node_idx:>6} │ {atom_name:>7} │ {imp:>10.4f} │ {bar}{marker}")
 
-    # Top important edges 
-
     if edge_importance is not None:
-        print(f"\n     🔗 Top Important Bonds:")
+        print(f"\n     Top Important Bonds:")
         edge_sorted = edge_importance.argsort(descending=True)
 
         shown_pairs = set()
@@ -262,8 +175,6 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
             edge_idx = edge_idx.item()
             src = data.edge_index[0, edge_idx].item()
             dst = data.edge_index[1, edge_idx].item()
-
-            # skip the Duplicate bonds  (undirected graph hai)
 
             pair = (min(src, dst), max(src, dst))
             if pair in shown_pairs:
@@ -280,35 +191,11 @@ for mol_idx, (dataset_idx, data) in enumerate(molecules_to_explain):
             if bond_count >= 5:
                 break
 
-    # Summary
     top3_atoms = [get_atom_name(data.x[sorted_indices[i].item()])
                   for i in range(min(3, len(sorted_indices)))]
-    print(f"\n     📌 Summary: Model ne sabse zyada dhyan diya → {', '.join(top3_atoms)} atoms pe")
+    print(f"\n     Top-3 atoms: {', '.join(top3_atoms)}")
     print()
 
-
-# ══════════════════════════════════════════════
-# 5. OVERALL INTERPRETATION
-# ══════════════════════════════════════════════
 print("=" * 60)
-print("  📖 Overall Interpretation")
-print("=" * 60)
-print("""
-  🧬 MUTAG dataset mein, mutagenicity mainly inn chemical
-     groups ki wajah se hoti hai:
-
-     • NO₂ (nitro group)  — nitrogen + oxygen atoms
-     • NH₂ (amino group)  — nitrogen + hydrogen
-     • Aromatic rings     — carbon ring structuresS
-
-     Agar GNNExplainer baar baar N (Nitrogen) aur O (Oxygen)
-     atoms ko highlight kar raha hai mutagenic molecules mein,
-     toh model ne SAHI pattern seekha hai!
-
-     Note: GNNExplainer har run pe thoda different results
-     de sakta hai kyunki yeh optimization-based method hai.
-     Multiple runs ka average lena better hota hai.
-""")
-print("=" * 60)
-print("  Explanation complete!")
+print("  Explanation complete")
 print("=" * 60)

@@ -205,7 +205,6 @@ def visualize_failure_case(dataset, gnn_exp, mol_id, seed1, seed2, jaccard_score
     diff2     = topk2 - topk1
 
     def fmt_nodes(node_set):
-        """Format node set as 'Node 3 (N), Node 7 (O)' instead of raw repr."""
         if not node_set:
             return "None"
         atoms = {n: G.nodes[n]['atom'] for n in sorted(node_set)}
