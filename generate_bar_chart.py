@@ -30,17 +30,12 @@ bars = ax.bar(
     zorder=3
 )
 
-for bar, score in zip(bars, scores):
+for i, (bar, score, std) in enumerate(zip(bars, scores, stds)):
     ax.text(
-        bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.03,
+        bar.get_x() + bar.get_width() / 2, score + std + 0.025,
         f"{score:.3f}",
-        ha='center', va='bottom', fontsize=14, fontweight='bold', color='#1a1a1a'
+        ha='center', va='bottom', fontsize=13, fontweight='bold', color='#1a1a1a'
     )
-
-ax.axhline(y=1.0, color='#2d7a3a', linestyle='--', alpha=0.4, lw=1.2, zorder=1)
-ax.text(2.35, 1.01, "Perfect stability (1.0)", fontsize=8, color='#2d7a3a', alpha=0.7)
-
-ax.axhline(y=0.0, color='#c0392b', linestyle='--', alpha=0.3, lw=1.0, zorder=1)
 
 ax.set_ylabel("Mean Jaccard Overlap (top-3 nodes)", fontsize=11, fontweight='bold', labelpad=10)
 ax.set_title(
@@ -48,8 +43,8 @@ ax.set_title(
     fontsize=13, fontweight='bold', pad=15, color='#1a1a1a'
 )
 
-ax.set_ylim(0, 0.72)
-ax.set_yticks(np.arange(0, 0.8, 0.1))
+ax.set_ylim(0, 0.82)
+ax.set_yticks(np.arange(0, 0.9, 0.1))
 ax.tick_params(axis='both', labelsize=10)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
@@ -58,10 +53,11 @@ ax.spines['bottom'].set_color('#cccccc')
 ax.yaxis.grid(True, alpha=0.3, linestyle='-', color='#cccccc', zorder=0)
 
 best_idx = np.argmax(scores)
+best_top = scores[best_idx] + stds[best_idx] + 0.075
 ax.annotate(
     "Most stable",
-    xy=(best_idx, scores[best_idx] + stds[best_idx] + 0.01),
-    xytext=(best_idx, scores[best_idx] + stds[best_idx] + 0.08),
+    xy=(best_idx, best_top),
+    xytext=(best_idx, best_top + 0.055),
     fontsize=9, fontweight='bold', color='#2d7a3a',
     ha='center',
     arrowprops=dict(arrowstyle='->', color='#2d7a3a', lw=1.5)
